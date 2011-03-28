@@ -22,13 +22,12 @@ class ReforumSDK {
 	/**
 	 * Базовый URL для API запросов
 	 */
-	protected $apiBaseUrl = "http://vedomosti.mediarealtor.dev/api.html";
+	protected $apiBaseUrl;
 
 	/**
 	 * Идентификатор
 	 */
 	protected $id;
-
 	/**
 	 * Секретный ключ для подписи запроса
 	 */
@@ -73,6 +72,8 @@ class ReforumSDK {
 	 * - '5500000100000000000000000' - для Омска
 	 * - '3800000300000000000000000' - для Иркутска
 	 * replyOutput boolean - при выполнении функции execute печатает ответ от сервера и завершает работу скрипта
+	 * connectionTimeout integer - ограничение времени на подключение к удалённому серверу
+	 * timeout integer - ограничение времени на получение ответа от сервера
 	 *
 	 * @param array $options Конфигурационный массив
 	 */
@@ -86,6 +87,9 @@ class ReforumSDK {
 
 		$this->replyOutput = $this->getOption('replyOutput', $options, false, $this->replyOutput);
 		$this->cityId = $this->getOption('cityId', $options, false, $this->cityId);
+
+		$this->connectionTimeout = $this->getOption('connectionTimeout', $options, false, $this->connectionTimeout);
+		$this->timeout = $this->getOption('timeout', $options, false, $this->timeout);
 	}
 
 	/**
