@@ -17,7 +17,13 @@ class ReforumSDK {
 	/**
 	 * SDK версия
 	 */
-	const VERSION = '1.0';
+	const VERSION = '2.0';
+
+	// методы
+	const ACT_SECTIONS = 'sections';
+	const ACT_REGIONS = 'regions';
+	const ACT_FORMSEARCH = 'formSearch';
+	const ACT_ADS = 'ads';
 
 	/**
 	 * Базовый URL для API запросов
@@ -40,14 +46,13 @@ class ReforumSDK {
 	/**
 	 * Идентификатор города
 	 */
-	protected $cityId = '7700000000000000000000000';
+	protected $regionId = '7700000000000000000000000';
 
 	protected $connectionTimeout = 1;
 	protected $timeout = 8;
-	protected $userAgent = 'Reforum PHP SDK';
+	protected $userAgent = 'Reforum PHP SDK 2';
 
 	protected $replyOutput = false;
-
 
 	protected $actions = array();
 	protected $data = array();
@@ -64,18 +69,14 @@ class ReforumSDK {
 	 *
 	 * Дополнительные параметры:
 	 *
-	 * apiBaseUrl string - Базовый URL для API запросов
-	 * cityId string - идентификатор города:
-	 * - '7700000000000000000000000' - для Москвы
-	 * - '5400000100000000000000000' - для Новосибирска
-	 * - '2300000700000000000000000' - для Сочи
-	 * - '5500000100000000000000000' - для Омска
-	 * - '3800000300000000000000000' - для Иркутска
+	 * apiBaseUrl string - базовый URL для API запросов
+	 * regionId integer - идентификатор региона
 	 * replyOutput boolean - при выполнении функции execute печатает ответ от сервера и завершает работу скрипта
 	 * connectionTimeout integer - ограничение времени на подключение к удалённому серверу
 	 * timeout integer - ограничение времени на получение ответа от сервера
 	 *
 	 * @param array $options Конфигурационный массив
+	 * @return void
 	 */
 	public function  __construct(array $options)
 	{
@@ -86,7 +87,7 @@ class ReforumSDK {
 		$this->apiBaseUrl = $this->getOption('apiBaseUrl', $options, false, $this->apiBaseUrl);
 
 		$this->replyOutput = $this->getOption('replyOutput', $options, false, $this->replyOutput);
-		$this->cityId = $this->getOption('cityId', $options, false, $this->cityId);
+		$this->regionId = $this->getOption('regionId', $options, false, $this->regionId);
 
 		$this->connectionTimeout = $this->getOption('connectionTimeout', $options, false, $this->connectionTimeout);
 		$this->timeout = $this->getOption('timeout', $options, false, $this->timeout);
@@ -97,10 +98,12 @@ class ReforumSDK {
 	 *
 	 * Добавляет действие в пакет запроса. Возможные действия:
 	 * - sections: возвращает список доступных разделов
+	 * - regions: возвращает список регионов
      * - formSearch: возвращает форму поиска
-     * - search: выполняет поиск, и возвращает найденные данные
+     * - ads: отдаёт рекламу
+     * не реализовано:
+	 * - search: выполняет поиск, и возвращает найденные данные
      * - advert: возвращает данные объявления по id
-     * - banners: отдаёт рекламу
 	 *
 	 * @param string $actionName
 	 * @param array $params
@@ -122,7 +125,7 @@ class ReforumSDK {
 		$params = array();
 		$params['id'] = $this->id;
 		$params['actions'] = $this->getActions();
-		$params['cityId'] = $this->cityId;
+		$params['regionId'] = $this->regionId;
 		$params['sig'] = $this->getSignature($params);
 
 		$url = $this->apiBaseUrl . '?' . http_build_query($params, null, '&');
@@ -145,7 +148,9 @@ class ReforumSDK {
 		$result = curl_exec($ch);
 
 		if($this->replyOutput) {
-			echo $result; die; // для отладки
+			var_dump($data);
+			echo PHP_EOL, PHP_EOL, $result; 
+			die; // для отладки
 		}
 
 		$e = null;
@@ -154,7 +159,7 @@ class ReforumSDK {
 		} else {
 			$data = (array)json_decode($result, true);
 			if (isset($data['error'])) {
-				$e = new ReforumApiException($data['error']);
+				$e = new ReforumApiException($data['error'], $data['errorNo']);
 			}
 		}
 
@@ -166,7 +171,35 @@ class ReforumSDK {
 		$this->data = $data;
 		return $this->data;
 	}
+	
+	/**
+	 * Печатает вызов определённого метода
+	 *
+	 * @param string $action имя метода, по умолчанию выводит все
+	 * @return void
+	 */
+	public function printDataDebug($action = null)
+	{
+		echo '<br><pre>';
+		if($action) {
+			if(isset($this->data[$action])) {
+				var_dump($this->data[$action]);
+			}
+		} else {
+			var_dump($this->data);
+		}
+		echo '</pre>';
+	}
 
+	/**
+	 * Извлекает опцию из массива
+	 *
+	 * @param string $key ключ опции в массиве
+	 * @param array $options массив опций
+	 * @param boolean $required обязательное присутсвие значения опции в массиве
+	 * @param mixed $default значение опции по умолчанию, при отсутствии в массиве
+	 * @return mixed
+	 */
 	protected function getOption($key, array $options, $required = false, $default = null)
 	{
 		if (isset($options[$key])) {
@@ -174,17 +207,28 @@ class ReforumSDK {
 		}
 
 		if($required) {
-			throw new Exception("Do not specify a required parameter '$key'", 101);
+			throw new ReforumApiException("Do not specify a required parameter '$key'", 101);
 		}
 
 		return $default;
 	}
 
+	/**
+	 * Возвращает список добавленных методов
+	 *
+	 * @return array
+	 */
 	protected function getActions()
 	{
-		return implode(',',array_keys($this->actions));
+		return implode(',', array_keys($this->actions));
 	}
 
+	/**
+	 * Генерирует подпись запроса на основе массива параметров
+	 *
+	 * @param array $params
+	 * @return string
+	 */
 	protected function getSignature(array $params)
 	{
 		ksort($params, SORT_STRING);
@@ -197,23 +241,7 @@ class ReforumSDK {
 
 		return md5($str);
 	}
-
-	/**
-	 *
-	 * @param string $action распечатать вызов определённого метода
-	 */
-	public function print_data_debug($action = null)
-	{
-		echo '<br /><pre>';
-		if($action) {
-			if(isset($this->data[$action])) {
-				var_dump($this->data[$action]);
-			}
-		} else {
-			var_dump($this->data);
-		}
-		echo '</pre>';
-	}
+	
 }
 
 
