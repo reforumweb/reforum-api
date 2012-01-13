@@ -46,7 +46,7 @@ class ReforumSDK {
 	/**
 	 * Идентификатор города
 	 */
-	protected $regionId = '7700000000000000000000000';
+	protected $regionId = '';
 
 	protected $connectionTimeout = 1;
 	protected $timeout = 8;
@@ -246,3 +246,4 @@ class ReforumSDK {
 
 
 ?>
+
