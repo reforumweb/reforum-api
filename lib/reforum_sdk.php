@@ -23,7 +23,7 @@ class ReforumSDK {
 	const ACT_SECTIONS = 'sections';
 	const ACT_REGIONS = 'regions';
 	const ACT_FORMSEARCH = 'formSearch';
-	const ACT_ADS = 'ads';
+	const ACT_SPEC = 'spec';
 
 	/**
 	 * Базовый URL для API запросов
