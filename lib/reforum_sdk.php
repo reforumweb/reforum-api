@@ -38,10 +38,6 @@ class ReforumSDK {
 	 * Секретный ключ для подписи запроса
 	 */
 	protected $secretKey;
-	/**
-	 * IP-адрес клиента для подписи
-	 */
-	protected $clientIP;
 
 	/**
 	 * Идентификатор города
@@ -65,7 +61,6 @@ class ReforumSDK {
 	 *
 	 * id integer - идентификатор партнёра
 	 * secretKey string - секретный ключ для подписи запросов
-	 * clientIP string - IP адрес с которого будут посланы запросы, необходим для подписи
 	 *
 	 * Дополнительные параметры:
 	 *
@@ -82,7 +77,6 @@ class ReforumSDK {
 	{
 		$this->id = $this->getOption('id', $options, true);
 		$this->secretKey = $this->getOption('secretKey', $options, true);
-		$this->clientIP = $this->getOption('clientIP', $options, true);
 
 		$this->apiBaseUrl = $this->getOption('apiBaseUrl', $options, false, $this->apiBaseUrl);
 
@@ -206,7 +200,7 @@ class ReforumSDK {
 			return $options[$key];
 		}
 
-		if($required) {
+		if ($required) {
 			throw new ReforumApiException("Do not specify a required parameter '$key'", 101);
 		}
 
@@ -237,7 +231,7 @@ class ReforumSDK {
 		foreach ($params as $key => $value) {
 			$str .= sprintf('%s=%s', $key, $value);
 		}
-		$str .= $this->secretKey . $this->clientIP;
+		$str .= $this->secretKey;
 
 		return md5($str);
 	}
