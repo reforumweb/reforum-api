@@ -22,6 +22,7 @@ class ReforumSDK {
 	// методы
 	const ACT_SECTIONS = 'sections';
 	const ACT_REGIONS = 'regions';
+	const ACT_GEO = 'geo';
 	const ACT_FORMSEARCH = 'formSearch';
 	const ACT_SPEC = 'spec';
 
@@ -40,15 +41,23 @@ class ReforumSDK {
 	protected $secretKey;
 
 	/**
-	 * Идентификатор города
+	 * Идентификатор региона
+	 * @deprecated
 	 */
 	protected $regionId = '';
+
+	/**
+	 * @var string Идентификатор гео
+	 */
+	protected $geoId = '';
 
 	protected $connectionTimeout = 1;
 	protected $timeout = 8;
 	protected $userAgent = 'Reforum PHP SDK 2';
 
 	protected $replyOutput = false;
+
+	protected $dbg = false;
 
 	protected $actions = array();
 	protected $data = array();
@@ -65,7 +74,8 @@ class ReforumSDK {
 	 * Дополнительные параметры:
 	 *
 	 * apiBaseUrl string - базовый URL для API запросов
-	 * regionId integer - идентификатор региона
+	 * regionId integer - идентификатор региона deprecated
+	 * geoId string - идентификатор гео региона
 	 * replyOutput boolean - при выполнении функции execute печатает ответ от сервера и завершает работу скрипта
 	 * connectionTimeout integer - ограничение времени на подключение к удалённому серверу
 	 * timeout integer - ограничение времени на получение ответа от сервера
@@ -81,7 +91,9 @@ class ReforumSDK {
 		$this->apiBaseUrl = $this->getOption('apiBaseUrl', $options, false, $this->apiBaseUrl);
 
 		$this->replyOutput = $this->getOption('replyOutput', $options, false, $this->replyOutput);
+		$this->dbg = $this->getOption('dbg', $options, false, $this->dbg);
 		$this->regionId = $this->getOption('regionId', $options, false, $this->regionId);
+		$this->geoId = $this->getOption('geoId', $options, false, $this->geoId);
 
 		$this->connectionTimeout = $this->getOption('connectionTimeout', $options, false, $this->connectionTimeout);
 		$this->timeout = $this->getOption('timeout', $options, false, $this->timeout);
@@ -120,7 +132,12 @@ class ReforumSDK {
 		$params['id'] = $this->id;
 		$params['actions'] = $this->getActions();
 		$params['regionId'] = $this->regionId;
+		$params['geoId'] = $this->geoId;
 		$params['sig'] = $this->getSignature($params);
+		if ($this->dbg) {
+			$params['XDEBUG_SESSION_START'] = 'DBG';
+			$params['debug'] = 1;
+		}
 
 		$url = $this->apiBaseUrl . '?' . http_build_query($params, null, '&');
 
