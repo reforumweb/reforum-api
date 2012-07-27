@@ -29,7 +29,7 @@ class ReforumSDK {
 	/**
 	 * Базовый URL для API запросов
 	 */
-	protected $apiBaseUrl;
+	protected $apiBaseUrl = 'http://service.reforum.ru/api.html';
 
 	/**
 	 * Идентификатор
@@ -49,7 +49,7 @@ class ReforumSDK {
 	/**
 	 * @var string Идентификатор гео
 	 */
-	protected $geoId = '';
+	protected $geoId = 'msk';
 
 	protected $connectionTimeout = 1;
 	protected $timeout = 8;
