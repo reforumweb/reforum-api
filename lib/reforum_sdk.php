@@ -25,6 +25,11 @@ class ReforumSDK {
 	const ACT_GEO = 'geo';
 	const ACT_FORMSEARCH = 'formSearch';
 	const ACT_SPEC = 'spec';
+	const ACT_ADS = 'ads';
+	const ACT_ADVERT = 'advert';
+	const ACT_ADVERT_PROPS = 'advertProps';
+	const ACT_SIMILAR = 'similar';
+	const ACT_SEARCH = 'search';
 
 	/**
 	 * Базовый URL для API запросов
@@ -193,8 +198,13 @@ class ReforumSDK {
 	{
 		echo '<br><pre>';
 		if($action) {
-			if(isset($this->data[$action])) {
-				var_dump($this->data[$action]);
+			if (!is_array($action)) {
+				$action = array($action);
+			}
+			foreach ($action as $id) {
+				if(isset($this->data[$id])) {
+					var_dump($this->data[$id]);
+				}
 			}
 		} else {
 			var_dump($this->data);
@@ -254,7 +264,3 @@ class ReforumSDK {
 	}
 	
 }
-
-
-?>
-
