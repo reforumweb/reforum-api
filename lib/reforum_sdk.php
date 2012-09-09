@@ -26,6 +26,7 @@ class ReforumSDK {
 	const ACT_FORMSEARCH = 'formSearch';
 	const ACT_SPEC = 'spec';
 	const ACT_ADS = 'ads';
+	const ACT_ADS_AVAILABLE = 'adsAvailable';
 	const ACT_ADVERT = 'advert';
 	const ACT_ADVERT_PROPS = 'advertProps';
 	const ACT_SIMILAR = 'similar';
