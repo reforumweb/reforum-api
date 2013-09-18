@@ -17,7 +17,7 @@ class ReforumSDK {
 	/**
 	 * SDK версия
 	 */
-	const VERSION = '2.0';
+	const VERSION = '2.1';
 
 	// методы
 	const ACT_SECTIONS = 'sections';
