@@ -31,6 +31,7 @@ class ReforumSDK {
 	const ACT_ADVERT_PROPS = 'advertProps';
 	const ACT_SIMILAR = 'similar';
 	const ACT_SEARCH = 'search';
+	const ACT_GEOCODER = 'geocoder';
 
 	/**
 	 * Базовый URL для API запросов
