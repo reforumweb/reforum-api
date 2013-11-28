@@ -17,7 +17,7 @@ class ReforumSDK {
 	/**
 	 * SDK версия
 	 */
-	const VERSION = '2.0';
+	const VERSION = '2.5';
 
 	// методы
 	const ACT_SECTIONS = 'sections';
@@ -31,6 +31,12 @@ class ReforumSDK {
 	const ACT_ADVERT_PROPS = 'advertProps';
 	const ACT_SIMILAR = 'similar';
 	const ACT_SEARCH = 'search';
+	const ACT_GEOCODER	= 'geocoder';
+
+	static protected $requestTypeGet = 'GET';
+	static protected $requestTypePost = CURLOPT_POST;
+	static protected $requestTypePut = CURLOPT_PUT;
+	static protected $requestTypeDelete = 'DELETE';
 
 	/**
 	 * Базовый URL для API запросов
@@ -67,6 +73,7 @@ class ReforumSDK {
 
 	protected $actions = array();
 	protected $data = array();
+
 
 	/**
 	 * Инициализация
@@ -111,11 +118,11 @@ class ReforumSDK {
 	 * Добавляет действие в пакет запроса. Возможные действия:
 	 * - sections: возвращает список доступных разделов
 	 * - regions: возвращает список регионов
-     * - formSearch: возвращает форму поиска
-     * - ads: отдаёт рекламу
-     * не реализовано:
+	 * - formSearch: возвращает форму поиска
+	 * - ads: отдаёт рекламу
+	 * не реализовано:
 	 * - search: выполняет поиск, и возвращает найденные данные
-     * - advert: возвращает данные объявления по id
+	 * - advert: возвращает данные объявления по id
 	 *
 	 * @param string $actionName
 	 * @param array $params
@@ -127,46 +134,43 @@ class ReforumSDK {
 		return true;
 	}
 
-	/**
-	 * Выполняет все действия и возвращает массив с результатом
-	 *
-	 * @return array
-	 */
-	public function execute()
+	public function geocoderList($params)
 	{
-		$params = array();
-		$params['id'] = $this->id;
-		$params['actions'] = $this->getActions();
-		$params['regionId'] = $this->regionId;
-		$params['geoId'] = $this->geoId;
-		$params['sig'] = $this->getSignature($params);
-		if ($this->dbg) {
-			$params['XDEBUG_SESSION_START'] = 'DBG';
-			$params['debug'] = 1;
-		}
+		return $this->_makeUnitRequest(self::ACT_GEOCODER, self::$requestTypeGet, $params);
+	}
 
-		$url = $this->apiBaseUrl . '?' . http_build_query($params, null, '&');
+	public function similarList($params)
+	{
+		return $this->_makeUnitRequest(self::ACT_SIMILAR, self::$requestTypeGet, $params);
+	}
 
-		// формируем POST данных
-		$data = array();
-		foreach ($this->actions AS $act => $param) {
-			$data[$act] = json_encode($param);
-		}
+	protected function _makeUnitRequest($act, $requestType, $params)
+	{
+		$params = array($act => $params);
+		$url = 'http://reforum2.dev/api/' . $act . '/' . $this->_getUrlParams($params);
+		return $this->_makeRequest($url, $requestType);
+	}
 
-		// запрос
+	protected function _makeRequest($url, $requestType, array $data=array())
+	{
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $this->connectionTimeout);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_TIMEOUT, $this->timeout);
 		curl_setopt($ch, CURLOPT_USERAGENT, $this->userAgent);
-		curl_setopt($ch, CURLOPT_POST, 1);
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+		if ($requestType == self::$requestTypePut) {
+			curl_setopt($ch, $requestType, 1);
+		}
+		if ($requestType == self::$requestTypePost) {
+			curl_setopt($ch, $requestType, 1);
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+		}
 		$result = curl_exec($ch);
 
 		if($this->replyOutput) {
 			var_dump($data);
-			echo PHP_EOL, PHP_EOL, $result; 
+			echo PHP_EOL, PHP_EOL, $result;
 			die; // для отладки
 		}
 
@@ -185,10 +189,41 @@ class ReforumSDK {
 			throw $e;
 		}
 
-		$this->data = $data;
-		return $this->data;
+		return $data;
 	}
-	
+
+	protected function _getUrlParams($params = array())
+	{
+		$params['id'] = $this->id;
+		$params['actions'] = $this->getActions();
+		$params['regionId'] = $this->regionId;
+		$params['geoId'] = $this->geoId;
+		$params['sig'] = $this->getSignature($params);
+		if ($this->dbg) {
+			$params['XDEBUG_SESSION_START'] = 'DBG';
+			$params['debug'] = 1;
+		}
+		return '?' . http_build_query($params, null, '&');
+	}
+
+	/**
+	 * Выполняет все действия и возвращает массив с результатом
+	 *
+	 * @return array
+	 */
+	public function execute()
+	{
+		$url = $this->apiBaseUrl . $this->_getUrlParams();
+
+		// формируем POST данных
+		$data = array();
+		foreach ($this->actions AS $act => $param) {
+			$data[$act] = json_encode($param);
+		}
+
+		return $this->data = $this->_makeRequest($url, self::$requestTypePost, $data);
+	}
+
 	/**
 	 * Печатает вызов определённого метода
 	 *
@@ -263,5 +298,5 @@ class ReforumSDK {
 
 		return md5($str);
 	}
-	
+
 }
