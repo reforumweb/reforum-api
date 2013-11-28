@@ -42,11 +42,12 @@ class ReforumSDK {
 	 * Базовый URL для API запросов
 	 */
 	protected $apiBaseUrl = 'http://service.reforum.ru/api.html';
+	protected $apiDomain = '';
 
 	/**
-	 * Идентификатор
+	 * Идентификатор партнера
 	 */
-	protected $id;
+	protected $partnerId;
 	/**
 	 * Секретный ключ для подписи запроса
 	 */
@@ -98,10 +99,12 @@ class ReforumSDK {
 	 */
 	public function  __construct(array $options)
 	{
-		$this->id = $this->getOption('id', $options, true);
+		$this->partnerId = $this->getOption('id', $options, true);
 		$this->secretKey = $this->getOption('secretKey', $options, true);
 
 		$this->apiBaseUrl = $this->getOption('apiBaseUrl', $options, false, $this->apiBaseUrl);
+		$parseUrl = parse_url($this->apiBaseUrl);
+		$this->apiDomain = $parseUrl['scheme'] . '://' . $parseUrl['host'];
 
 		$this->replyOutput = $this->getOption('replyOutput', $options, false, $this->replyOutput);
 		$this->dbg = $this->getOption('dbg', $options, false, $this->dbg);
@@ -134,24 +137,80 @@ class ReforumSDK {
 		return true;
 	}
 
-	public function geocoderList($params)
+	/**
+	 * Выполняет все действия и возвращает массив с результатом
+	 *
+	 * @return array
+	 */
+	public function execute()
 	{
-		return $this->_makeUnitRequest(self::ACT_GEOCODER, self::$requestTypeGet, $params);
+		$url = $this->apiBaseUrl . $this->_getUrlParams();
+
+		// формируем POST данных
+		$data = array();
+		foreach ($this->actions AS $act => $param) {
+			$data[$act] = json_encode($param);
+		}
+
+		return $this->data = $this->_execRequest($url, self::$requestTypePost, $data);
 	}
 
-	public function similarList($params)
+	/**
+	 * геокодирование
+	 * @param $params
+	 * @return array
+	 */
+	public function getEncodeGeo($params)
 	{
-		return $this->_makeUnitRequest(self::ACT_SIMILAR, self::$requestTypeGet, $params);
+		return $this->_requestList(self::ACT_GEOCODER, self::$requestTypeGet, $params);
 	}
 
-	protected function _makeUnitRequest($act, $requestType, $params)
+	/**
+	 * похожие объявления
+	 * @param $params
+	 * @return array
+	 */
+	public function getSimilarAdverts($params)
+	{
+		return $this->_requestList(self::ACT_SIMILAR, self::$requestTypeGet, $params);
+	}
+
+	/**
+	 * получить список объявлений
+	 * @param $params
+	 * @return array
+	 */
+	public function getAdverts($params)
+	{
+		return $this->_requestList(self::ACT_ADVERT, self::$requestTypeGet, $params);
+	}
+
+	/**
+	 * получить список объявлений
+	 * @param $params
+	 * @return array
+	 */
+	public function getAdvert($params)
+	{
+		return $this->_requestView(self::ACT_ADVERT, self::$requestTypeGet, $params);
+	}
+
+	protected function _requestView($act, $requestType, $params)
+	{
+		$url = $this->apiDomain . '/' . $act . '/' . $params['id'] . '/';
+		$params = array($act => $params);
+		$url .= $this->_getUrlParams($params);
+		return $this->_execRequest($url, $requestType);
+	}
+
+	protected function _requestList($act, $requestType, $params)
 	{
 		$params = array($act => $params);
-		$url = 'http://reforum2.dev/api/' . $act . '/' . $this->_getUrlParams($params);
-		return $this->_makeRequest($url, $requestType);
+		$url = $this->apiDomain . '/' . $act . '/' . $this->_getUrlParams($params);
+		return $this->_execRequest($url, $requestType);
 	}
 
-	protected function _makeRequest($url, $requestType, array $data=array())
+	protected function _execRequest($url, $requestType, array $data=array())
 	{
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $url);
@@ -180,7 +239,7 @@ class ReforumSDK {
 		} else {
 			$data = (array)json_decode($result, true);
 			if (isset($data['error'])) {
-				$e = new ReforumApiException($data['error'], $data['errorNo']);
+				$e = new ReforumApiException();
 			}
 		}
 
@@ -194,7 +253,7 @@ class ReforumSDK {
 
 	protected function _getUrlParams($params = array())
 	{
-		$params['id'] = $this->id;
+		$params['partnerId'] = $this->partnerId;
 		$params['actions'] = $this->getActions();
 		$params['regionId'] = $this->regionId;
 		$params['geoId'] = $this->geoId;
@@ -204,24 +263,6 @@ class ReforumSDK {
 			$params['debug'] = 1;
 		}
 		return '?' . http_build_query($params, null, '&');
-	}
-
-	/**
-	 * Выполняет все действия и возвращает массив с результатом
-	 *
-	 * @return array
-	 */
-	public function execute()
-	{
-		$url = $this->apiBaseUrl . $this->_getUrlParams();
-
-		// формируем POST данных
-		$data = array();
-		foreach ($this->actions AS $act => $param) {
-			$data[$act] = json_encode($param);
-		}
-
-		return $this->data = $this->_makeRequest($url, self::$requestTypePost, $data);
 	}
 
 	/**
