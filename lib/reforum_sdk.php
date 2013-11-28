@@ -195,6 +195,18 @@ class ReforumSDK {
 		return $this->_requestView(self::ACT_ADVERT, self::$requestTypeGet, $params);
 	}
 
+	/**
+	 * получить список объявлений
+	 * @param $params
+	 * @return array
+	 */
+	public function getAdvertProps($params)
+	{
+		$params = array(self::ACT_ADVERT => $params);
+		$url = $this->apiDomain . '/' . self::ACT_ADVERT . '/' . self::ACT_ADVERT_PROPS . '/' . $this->_getUrlParams($params);
+		return $this->_execRequest($url, self::$requestTypeGet);
+	}
+
 	protected function _requestView($act, $requestType, $params)
 	{
 		$url = $this->apiDomain . '/' . $act . '/' . $params['id'] . '/';
