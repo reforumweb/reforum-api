@@ -24,6 +24,7 @@ class ReforumSDK {
 	const ACT_REGIONS = 'regions';
 	const ACT_GEO = 'geo';
 	const ACT_FORMSEARCH = 'formSearch';
+	const ACT_FORMSEARCH_PART = 'formSearchPart';
 	const ACT_SPEC = 'spec';
 	const ACT_ADS = 'ads';
 	const ACT_ADS_AVAILABLE = 'adsAvailable';
