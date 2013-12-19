@@ -17,13 +17,14 @@ class ReforumSDK {
 	/**
 	 * SDK версия
 	 */
-	const VERSION = '2.1';
+	const VERSION = '2.5';
 
 	// методы
 	const ACT_SECTIONS = 'sections';
 	const ACT_REGIONS = 'regions';
 	const ACT_GEO = 'geo';
 	const ACT_FORMSEARCH = 'formSearch';
+	const ACT_FORMSEARCH_PART = 'formSearchPart';
 	const ACT_SPEC = 'spec';
 	const ACT_ADS = 'ads';
 	const ACT_ADS_AVAILABLE = 'adsAvailable';
@@ -31,17 +32,23 @@ class ReforumSDK {
 	const ACT_ADVERT_PROPS = 'advertProps';
 	const ACT_SIMILAR = 'similar';
 	const ACT_SEARCH = 'search';
-	const ACT_GEOCODER = 'geocoder';
+	const ACT_GEOCODER	= 'geocoder';
+
+	static protected $requestTypeGet = 'GET';
+	static protected $requestTypePost = CURLOPT_POST;
+	static protected $requestTypePut = CURLOPT_PUT;
+	static protected $requestTypeDelete = 'DELETE';
 
 	/**
 	 * Базовый URL для API запросов
 	 */
 	protected $apiBaseUrl = 'http://service.reforum.ru/api.html';
+	protected $apiDomain = '';
 
 	/**
-	 * Идентификатор
+	 * Идентификатор партнера
 	 */
-	protected $id;
+	protected $partnerId;
 	/**
 	 * Секретный ключ для подписи запроса
 	 */
@@ -69,6 +76,7 @@ class ReforumSDK {
 	protected $actions = array();
 	protected $data = array();
 
+
 	/**
 	 * Инициализация
 	 *
@@ -92,10 +100,12 @@ class ReforumSDK {
 	 */
 	public function  __construct(array $options)
 	{
-		$this->id = $this->getOption('id', $options, true);
+		$this->partnerId = $this->getOption('id', $options, true);
 		$this->secretKey = $this->getOption('secretKey', $options, true);
 
 		$this->apiBaseUrl = $this->getOption('apiBaseUrl', $options, false, $this->apiBaseUrl);
+		$parseUrl = parse_url($this->apiBaseUrl);
+		$this->apiDomain = $parseUrl['scheme'] . '://' . $parseUrl['host'];
 
 		$this->replyOutput = $this->getOption('replyOutput', $options, false, $this->replyOutput);
 		$this->dbg = $this->getOption('dbg', $options, false, $this->dbg);
@@ -135,18 +145,7 @@ class ReforumSDK {
 	 */
 	public function execute()
 	{
-		$params = array();
-		$params['id'] = $this->id;
-		$params['actions'] = $this->getActions();
-		$params['regionId'] = $this->regionId;
-		$params['geoId'] = $this->geoId;
-		$params['sig'] = $this->getSignature($params);
-		if ($this->dbg) {
-			$params['XDEBUG_SESSION_START'] = 'DBG';
-			$params['debug'] = 1;
-		}
-
-		$url = $this->apiBaseUrl . '?' . http_build_query($params, null, '&');
+		$url = $this->apiBaseUrl . $this->_getUrlParams();
 
 		// формируем POST данных
 		$data = array();
@@ -154,15 +153,91 @@ class ReforumSDK {
 			$data[$act] = json_encode($param);
 		}
 
-		// запрос
+		return $this->data = $this->_execRequest($url, self::$requestTypePost, $data);
+	}
+
+	/**
+	 * геокодирование
+	 * @param $params
+	 * @return array
+	 */
+	public function getEncodeGeo($params)
+	{
+		return $this->_requestList(self::ACT_GEOCODER, self::$requestTypeGet, $params);
+	}
+
+	/**
+	 * похожие объявления
+	 * @param $params
+	 * @return array
+	 */
+	public function getSimilarAdverts($params)
+	{
+		return $this->_requestList(self::ACT_SIMILAR, self::$requestTypeGet, $params);
+	}
+
+	/**
+	 * получить список объявлений
+	 * @param $params
+	 * @return array
+	 */
+	public function getAdverts($params)
+	{
+		return $this->_requestList(self::ACT_ADVERT, self::$requestTypeGet, $params);
+	}
+
+	/**
+	 * получить список объявлений
+	 * @param $params
+	 * @return array
+	 */
+	public function getAdvert($params)
+	{
+		return $this->_requestView(self::ACT_ADVERT, self::$requestTypeGet, $params);
+	}
+
+	/**
+	 * получить список объявлений
+	 * @param $params
+	 * @return array
+	 */
+	public function getAdvertProps($params)
+	{
+		$params = array(self::ACT_ADVERT => $params);
+		$url = $this->apiDomain . '/' . self::ACT_ADVERT . '/' . self::ACT_ADVERT_PROPS . '/' . $this->_getUrlParams($params);
+		return $this->_execRequest($url, self::$requestTypeGet);
+	}
+
+	protected function _requestView($act, $requestType, $params)
+	{
+		$url = $this->apiDomain . '/' . $act . '/' . $params['id'] . '/';
+		$params = array($act => $params);
+		$url .= $this->_getUrlParams($params);
+		return $this->_execRequest($url, $requestType);
+	}
+
+	protected function _requestList($act, $requestType, $params)
+	{
+		$params = array($act => $params);
+		$url = $this->apiDomain . '/' . $act . '/' . $this->_getUrlParams($params);
+		return $this->_execRequest($url, $requestType);
+	}
+
+	protected function _execRequest($url, $requestType, array $data=array())
+	{
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $this->connectionTimeout);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_TIMEOUT, $this->timeout);
 		curl_setopt($ch, CURLOPT_USERAGENT, $this->userAgent);
-		curl_setopt($ch, CURLOPT_POST, 1);
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+		if ($requestType == self::$requestTypePut) {
+			curl_setopt($ch, $requestType, 1);
+		}
+		if ($requestType == self::$requestTypePost) {
+			curl_setopt($ch, $requestType, 1);
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+		}
 		$result = curl_exec($ch);
 
 		if($this->replyOutput) {
@@ -177,7 +252,7 @@ class ReforumSDK {
 		} else {
 			$data = (array)json_decode($result, true);
 			if (isset($data['error'])) {
-				$e = new ReforumApiException($data['error'], $data['errorNo']);
+				$e = new ReforumApiException();
 			}
 		}
 
@@ -186,8 +261,21 @@ class ReforumSDK {
 			throw $e;
 		}
 
-		$this->data = $data;
-		return $this->data;
+		return $data;
+	}
+
+	protected function _getUrlParams($params = array())
+	{
+		$params['partnerId'] = $this->partnerId;
+		$params['actions'] = $this->getActions();
+		$params['regionId'] = $this->regionId;
+		$params['geoId'] = $this->geoId;
+		$params['sig'] = $this->getSignature($params);
+		if ($this->dbg) {
+			$params['XDEBUG_SESSION_START'] = 'DBG';
+			$params['debug'] = 1;
+		}
+		return '?' . http_build_query($params, null, '&');
 	}
 
 	/**
