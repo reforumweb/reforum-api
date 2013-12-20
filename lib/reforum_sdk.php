@@ -12,12 +12,12 @@ class ReforumApiException extends Exception
 /**
  * Библиотека для работы с API reforum.ru
  */
-class ReforumSDK {
-
+class ReforumSDK 
+{
 	/**
 	 * SDK версия
 	 */
-	const VERSION = '2.5';
+	const VERSION = '2.6';
 
 	// методы
 	const ACT_SECTIONS = 'sections';
@@ -32,7 +32,13 @@ class ReforumSDK {
 	const ACT_ADVERT_PROPS = 'advertProps';
 	const ACT_SIMILAR = 'similar';
 	const ACT_SEARCH = 'search';
-	const ACT_GEOCODER	= 'geocoder';
+	const ACT_GEOCODER = 'geocoder';
+	const ACT_NEWS = 'news';
+	const ACT_ARTICLES = 'article';
+	const ACT_FAQ = 'faq';
+	const ACT_INFOGRAPHIC = 'infographic';
+	const ACT_ADVERT_OF_DAY = 'advert_of_day';
+	const ACT_COMPANY_LEADERS = 'company_leaders';
 
 	static protected $requestTypeGet = 'GET';
 	static protected $requestTypePost = CURLOPT_POST;
