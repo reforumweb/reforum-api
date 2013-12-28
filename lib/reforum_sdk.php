@@ -214,6 +214,17 @@ class ReforumSDK
 		return $this->_execRequest($url, self::$requestTypeGet);
 	}
 
+	/**
+	 * @param bool $remember запомнить
+	 */
+	public function login($username, $password, $rememberMe=false)
+	{
+		$params = array('username' => $username, 'password' => $password, 'rememberMe' => $rememberMe);
+		$url = $this->apiDomain . '/login/' . $this->_getUrlParams(array('login' => $params));
+		$resp = $this->_execRequest($url, self::$requestTypeGet);
+		return isset($resp['userAccess']) ? $resp['userAccess'] : null;
+	}
+
 	protected function _requestView($act, $requestType, $params)
 	{
 		$url = $this->apiDomain . '/' . $act . '/' . $params['id'] . '/';
