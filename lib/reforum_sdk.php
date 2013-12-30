@@ -225,6 +225,14 @@ class ReforumSDK
 		return isset($resp['userAccess']) ? $resp['userAccess'] : null;
 	}
 
+	public function getData($action = '')
+	{
+		if ($action && isset($this->data[ $action ])) {
+			return $this->data[ $action ];
+		}
+		return $this->data;
+	}
+
 	protected function _requestView($act, $requestType, $params)
 	{
 		$url = $this->apiDomain . '/' . $act . '/' . $params['id'] . '/';
