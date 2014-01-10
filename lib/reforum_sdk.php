@@ -225,6 +225,13 @@ class ReforumSDK
 		return isset($resp['userAccess']) ? $resp['userAccess'] : null;
 	}
 
+	public function leadSendMortgage($params)
+	{
+		$url = $this->apiDomain . '/api/lead/saveMortgage/' . $this->_getUrlParams(array('lead' => $params));
+		$resp = $this->_execRequest($url, self::$requestTypePost);
+		return isset($resp['saveMortgage']) ? $resp['saveMortgage'] : null;
+	}
+
 	public function getData($action = '')
 	{
 		if ($action && isset($this->data[ $action ])) {
