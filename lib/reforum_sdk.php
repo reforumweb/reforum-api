@@ -229,7 +229,14 @@ class ReforumSDK
 	{
 		$url = $this->apiDomain . '/api/lead/saveMortgage/' . $this->_getUrlParams(array('lead' => $params));
 		$resp = $this->_execRequest($url, self::$requestTypePost);
-		return isset($resp['saveMortgage']) ? $resp['saveMortgage'] : null;
+		return isset($resp['lead']) ? $resp['lead'] : null;
+	}
+
+	public function leadSendQuery($params)
+	{
+		$url = $this->apiDomain . '/api/lead/saveQuery/' . $this->_getUrlParams(array('lead' => $params));
+		$resp = $this->_execRequest($url, self::$requestTypePost);
+		return isset($resp['lead']) ? $resp['lead'] : null;
 	}
 
 	public function getData($action = '')
