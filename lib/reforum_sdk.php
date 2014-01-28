@@ -39,6 +39,7 @@ class ReforumSDK
 	const ACT_INFOGRAPHIC = 'infographic';
 	const ACT_ADVERT_OF_DAY = 'advert_of_day';
 	const ACT_COMPANY_LEADERS = 'company_leaders';
+	const ACT_UPLOAD_ADVERT_FOTO = 'uploadAdvertFoto';
 
 	static protected $requestTypeGet = 'GET';
 	static protected $requestTypePost = CURLOPT_POST;
@@ -247,6 +248,16 @@ class ReforumSDK
 		return $this->data;
 	}
 
+	/**
+	 * @param $filePath
+	 * @return array
+	 */
+	public function uploadAdvertFoto($filePath)
+	{
+		$url = $this->apiDomain . '/' . self::ACT_UPLOAD_ADVERT_FOTO . '/';
+		return $this->_putFile($url, $filePath);
+	}
+
 	protected function _requestView($act, $requestType, $params)
 	{
 		$url = $this->apiDomain . '/' . $act . '/' . $params['id'] . '/';
@@ -260,6 +271,51 @@ class ReforumSDK
 		$params = array($act => $params);
 		$url = $this->apiDomain . '/' . $act . '/' . $this->_getUrlParams($params);
 		return $this->_execRequest($url, $requestType);
+	}
+
+	/**
+	 * Закачка файла
+	 *
+	 * @param $url
+	 * @param $filePath
+	 * @return array
+	 * @throws ReforumApiException
+	 */
+	protected function _putFile($url, $filePath)
+	{
+		if (!file_exists($filePath)) {
+			throw new ReforumApiException();
+		}
+
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $this->connectionTimeout);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_TIMEOUT, $this->timeout);
+		curl_setopt($ch, CURLOPT_USERAGENT, $this->userAgent);
+
+		$fp = fopen($filePath, 'r');
+		curl_setopt($ch, CURLOPT_INFILE, $fp);
+		curl_setopt($ch, CURLOPT_INFILESIZE, filesize($filePath) );
+
+		curl_setopt($ch, CURLOPT_POST, true);
+		curl_setopt($ch, CURLOPT_UPLOAD, true);
+
+		$result = curl_exec($ch);
+
+		if (curl_errno($ch) > 0) {
+			$e = new ReforumApiException(curl_error($ch), curl_errno($ch));
+		} else {
+			$data = (array)json_decode($result, true);
+			if (isset($data['error'])) {
+				$e = new ReforumApiException();
+			}
+		}
+
+		curl_close($ch);
+
+
+		return $data;
 	}
 
 	protected function _execRequest($url, $requestType, array $data=array())
