@@ -248,6 +248,13 @@ class ReforumSDK
 		return $this->data;
 	}
 
+	public function getContentItem($type, $id)
+	{
+		$url = $this->apiDomain . '/' . $type . '/' . $id .'/' . $this->_getUrlParams(array('id' => $id));
+		$resp = $this->_execRequest($url, self::$requestTypeGet);
+		return $resp;
+	}
+
 	/**
 	 * @param $filePath
 	 * @return array
