@@ -216,6 +216,46 @@ class ReforumSDK
 	}
 
 	/**
+	 * @param bool $remember запомнить
+	 */
+	public function login($username, $password, $rememberMe=false)
+	{
+		$params = array('username' => $username, 'password' => $password, 'rememberMe' => $rememberMe);
+		$url = $this->apiDomain . '/login/' . $this->_getUrlParams(array('login' => $params));
+		$resp = $this->_execRequest($url, self::$requestTypeGet);
+		return isset($resp['userAccess']) ? $resp['userAccess'] : null;
+	}
+
+	public function leadSendMortgage($params)
+	{
+		$url = $this->apiDomain . '/api/lead/saveMortgage/' . $this->_getUrlParams(array('lead' => $params));
+		$resp = $this->_execRequest($url, self::$requestTypePost);
+		return isset($resp['lead']) ? $resp['lead'] : null;
+	}
+
+	public function leadSendQuery($params)
+	{
+		$url = $this->apiDomain . '/api/lead/saveQuery/' . $this->_getUrlParams(array('lead' => $params));
+		$resp = $this->_execRequest($url, self::$requestTypePost);
+		return isset($resp['lead']) ? $resp['lead'] : null;
+	}
+
+	public function getData($action = '')
+	{
+		if ($action && isset($this->data[ $action ])) {
+			return $this->data[ $action ];
+		}
+		return $this->data;
+	}
+
+	public function getContentItem($type, $id)
+	{
+		$url = $this->apiDomain . '/' . $type . '/' . $id .'/' . $this->_getUrlParams(array('id' => $id));
+		$resp = $this->_execRequest($url, self::$requestTypeGet);
+		return $resp;
+	}
+
+	/**
 	 * @param $filePath
 	 * @return array
 	 */
