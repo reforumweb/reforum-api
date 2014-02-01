@@ -12,7 +12,7 @@ class ReforumApiException extends Exception
 /**
  * Библиотека для работы с API reforum.ru
  */
-class ReforumSDK 
+class ReforumSDK
 {
 	/**
 	 * SDK версия
@@ -39,7 +39,10 @@ class ReforumSDK
 	const ACT_INFOGRAPHIC = 'infographic';
 	const ACT_ADVERT_OF_DAY = 'advert_of_day';
 	const ACT_COMPANY_LEADERS = 'company_leaders';
+	const ACT_ADVERTISING = 'advertising';
+	const ACT_PARTNERS = 'partners';
 	const ACT_UPLOAD_ADVERT_FOTO = 'uploadAdvertFoto';
+	const ACT_ADVERT_FORM = 'advert_form';
 
 	static protected $requestTypeGet = 'GET';
 	static protected $requestTypePost = CURLOPT_POST;
@@ -124,6 +127,65 @@ class ReforumSDK
 	}
 
 	/**
+	 * @param $filePath
+	 * @return array
+	 */
+	public function uploadAdvertFoto($filePath, $realtyType)
+	{
+		$url = $this->apiDomain . '/' . self::ACT_UPLOAD_ADVERT_FOTO . '/' . $this->_getUrlParams(array('realty_type' => $realtyType));
+		$result = $this->_putFile($url, $filePath);
+
+		return $result[self::ACT_UPLOAD_ADVERT_FOTO];
+	}
+
+	/**
+	 * Закачка файла
+	 *
+	 * @param $url
+	 * @param $filePath
+	 * @return array
+	 * @throws ReforumApiException
+	 */
+	protected function _putFile($url, $filePath)
+	{
+		if (!file_exists($filePath)) {
+			throw new ReforumApiException();
+		}
+
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $this->connectionTimeout);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_TIMEOUT, $this->timeout);
+		curl_setopt($ch, CURLOPT_USERAGENT, $this->userAgent);
+
+		$fp = fopen($filePath, 'r');
+		curl_setopt($ch, CURLOPT_INFILE, $fp);
+		curl_setopt($ch, CURLOPT_INFILESIZE, filesize($filePath) );
+
+		curl_setopt($ch, CURLOPT_PUT, true);
+		curl_setopt($ch, CURLOPT_UPLOAD, true);
+
+		$result = curl_exec($ch);
+
+		$e = false;
+		if (curl_errno($ch) > 0) {
+			$e = new ReforumApiException(curl_error($ch), curl_errno($ch));
+		} else {
+			$data = (array)json_decode($result, true);
+			if (isset($data['error'])) {
+				$e = new ReforumApiException();
+			}
+		}
+		if ($e) {
+			throw $e;
+		}
+
+		curl_close($ch);
+		return $data;
+	}
+
+	/**
 	 * Добавить действие в запрос
 	 *
 	 * Добавляет действие в пакет запроса. Возможные действия:
@@ -194,6 +256,22 @@ class ReforumSDK
 	}
 
 	/**
+	 * Данные формы добавления объявления
+	 *
+	 * @param $realtyType
+	 * @param int $advertId
+	 * @return array
+	 */
+	public function getAdvertForm($realtyType, $advertId = 0)
+	{
+		$params = array(
+			'realty_type' => $realtyType,
+			'advert_id' => $advertId,
+		);
+		return $this->_requestList(self::ACT_ADVERT_FORM, self::$requestTypeGet, $params);
+	}
+
+	/**
 	 * получить список объявлений
 	 * @param $params
 	 * @return array
@@ -255,16 +333,6 @@ class ReforumSDK
 		return $resp;
 	}
 
-	/**
-	 * @param $filePath
-	 * @return array
-	 */
-	public function uploadAdvertFoto($filePath)
-	{
-		$url = $this->apiDomain . '/' . self::ACT_UPLOAD_ADVERT_FOTO . '/';
-		return $this->_putFile($url, $filePath);
-	}
-
 	protected function _requestView($act, $requestType, $params)
 	{
 		$url = $this->apiDomain . '/' . $act . '/' . $params['id'] . '/';
@@ -278,51 +346,6 @@ class ReforumSDK
 		$params = array($act => $params);
 		$url = $this->apiDomain . '/' . $act . '/' . $this->_getUrlParams($params);
 		return $this->_execRequest($url, $requestType);
-	}
-
-	/**
-	 * Закачка файла
-	 *
-	 * @param $url
-	 * @param $filePath
-	 * @return array
-	 * @throws ReforumApiException
-	 */
-	protected function _putFile($url, $filePath)
-	{
-		if (!file_exists($filePath)) {
-			throw new ReforumApiException();
-		}
-
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, $url);
-		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $this->connectionTimeout);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($ch, CURLOPT_TIMEOUT, $this->timeout);
-		curl_setopt($ch, CURLOPT_USERAGENT, $this->userAgent);
-
-		$fp = fopen($filePath, 'r');
-		curl_setopt($ch, CURLOPT_INFILE, $fp);
-		curl_setopt($ch, CURLOPT_INFILESIZE, filesize($filePath) );
-
-		curl_setopt($ch, CURLOPT_POST, true);
-		curl_setopt($ch, CURLOPT_UPLOAD, true);
-
-		$result = curl_exec($ch);
-
-		if (curl_errno($ch) > 0) {
-			$e = new ReforumApiException(curl_error($ch), curl_errno($ch));
-		} else {
-			$data = (array)json_decode($result, true);
-			if (isset($data['error'])) {
-				$e = new ReforumApiException();
-			}
-		}
-
-		curl_close($ch);
-
-
-		return $data;
 	}
 
 	protected function _execRequest($url, $requestType, array $data=array())
