@@ -43,6 +43,7 @@ class ReforumSDK
 	const ACT_PARTNERS = 'partners';
 	const ACT_UPLOAD_ADVERT_FOTO = 'uploadAdvertFoto';
 	const ACT_ADVERT_FORM = 'advert_form';
+	const ACT_CONTEXT_TGB = 'context_tgb';
 
 	static protected $requestTypeGet = 'GET';
 	static protected $requestTypePost = CURLOPT_POST;
@@ -233,6 +234,18 @@ class ReforumSDK
 	public function getEncodeGeo($params)
 	{
 		return $this->_requestList(self::ACT_GEOCODER, self::$requestTypeGet, $params);
+	}
+
+	/**
+	 * контекстный ТГБ
+	 * @param $params
+	 * @return array
+	 */
+	public function getContextTgb($params)
+	{
+		$url = $this->apiDomain . '/api/advertising/contextTgb/' . $this->_getUrlParams(array('lead' => $params));
+		$resp = $this->_execRequest($url, self::$requestTypePost);
+		return isset($resp['lead']) ? $resp['lead'] : null;
 	}
 
 	/**
