@@ -44,6 +44,7 @@ class ReforumSDK
 	const ACT_UPLOAD_ADVERT_FOTO = 'uploadAdvertFoto';
 	const ACT_ADVERT_FORM = 'advert_form';
 	const ACT_CONTEXT_TGB = 'context_tgb';
+	const ACT_CATALOG_COTTAGE = 'catalogCottage';
 
 	static protected $requestTypeGet = 'GET';
 	static protected $requestTypePost = CURLOPT_POST;
