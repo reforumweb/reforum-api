@@ -45,6 +45,7 @@ class ReforumSDK
 	const ACT_ADVERT_FORM = 'advert_form';
 	const ACT_CONTEXT_TGB = 'context_tgb';
 	const ACT_CATALOG_COTTAGE = 'catalogCottage';
+	const ACT_ADVERT_COUNTER = 'advert_counter';
 
 	static protected $requestTypeGet = 'GET';
 	static protected $requestTypePost = CURLOPT_POST;
