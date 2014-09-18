@@ -21,7 +21,6 @@ class ReforumSDK
 
 	// методы
 	const ACT_SECTIONS = 'sections';
-	const ACT_REGIONS = 'regions';
 	const ACT_GEO = 'geo';
 	const ACT_FORMSEARCH = 'formSearch';
 	const ACT_FORMSEARCH_PART = 'formSearchPart';
@@ -69,12 +68,6 @@ class ReforumSDK
 	protected $secretKey;
 
 	/**
-	 * Идентификатор региона
-	 * @deprecated
-	 */
-	protected $regionId = '';
-
-	/**
 	 * @var string Идентификатор гео
 	 */
 	protected $geoId = 'msk';
@@ -103,7 +96,6 @@ class ReforumSDK
 	 * Дополнительные параметры:
 	 *
 	 * apiBaseUrl string - базовый URL для API запросов
-	 * regionId integer - идентификатор региона deprecated
 	 * geoId string - идентификатор гео региона
 	 * replyOutput boolean - при выполнении функции execute печатает ответ от сервера и завершает работу скрипта
 	 * connectionTimeout integer - ограничение времени на подключение к удалённому серверу
@@ -123,7 +115,6 @@ class ReforumSDK
 
 		$this->replyOutput = $this->getOption('replyOutput', $options, false, $this->replyOutput);
 		$this->dbg = $this->getOption('dbg', $options, false, $this->dbg);
-		$this->regionId = $this->getOption('regionId', $options, false, $this->regionId);
 		$this->geoId = $this->getOption('geoId', $options, false, $this->geoId);
 
 		$this->connectionTimeout = $this->getOption('connectionTimeout', $options, false, $this->connectionTimeout);
@@ -131,70 +122,10 @@ class ReforumSDK
 	}
 
 	/**
-	 * @param $filePath
-	 * @return array
-	 */
-	public function uploadAdvertFoto($filePath, $realtyType)
-	{
-		$url = $this->apiDomain . '/' . self::ACT_UPLOAD_ADVERT_FOTO . '/' . $this->_getUrlParams(array('realty_type' => $realtyType));
-		$result = $this->_putFile($url, $filePath);
-
-		return $result[self::ACT_UPLOAD_ADVERT_FOTO];
-	}
-
-	/**
-	 * Закачка файла
-	 *
-	 * @param $url
-	 * @param $filePath
-	 * @return array
-	 * @throws ReforumApiException
-	 */
-	protected function _putFile($url, $filePath)
-	{
-		if (!file_exists($filePath)) {
-			throw new ReforumApiException();
-		}
-
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, $url);
-		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $this->connectionTimeout);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($ch, CURLOPT_TIMEOUT, $this->timeout);
-		curl_setopt($ch, CURLOPT_USERAGENT, $this->userAgent);
-
-		$fp = fopen($filePath, 'r');
-		curl_setopt($ch, CURLOPT_INFILE, $fp);
-		curl_setopt($ch, CURLOPT_INFILESIZE, filesize($filePath) );
-
-		curl_setopt($ch, CURLOPT_PUT, true);
-		curl_setopt($ch, CURLOPT_UPLOAD, true);
-
-		$result = curl_exec($ch);
-
-		$e = false;
-		if (curl_errno($ch) > 0) {
-			$e = new ReforumApiException(curl_error($ch), curl_errno($ch));
-		} else {
-			$data = (array)json_decode($result, true);
-			if (isset($data['error'])) {
-				$e = new ReforumApiException();
-			}
-		}
-		if ($e) {
-			throw $e;
-		}
-
-		curl_close($ch);
-		return $data;
-	}
-
-	/**
 	 * Добавить действие в запрос
 	 *
 	 * Добавляет действие в пакет запроса. Возможные действия:
 	 * - sections: возвращает список доступных разделов
-	 * - regions: возвращает список регионов
 	 * - formSearch: возвращает форму поиска
 	 * - ads: отдаёт рекламу
 	 * не реализовано:
@@ -208,7 +139,7 @@ class ReforumSDK
 	public function addAction($actionName, array $params = array())
 	{
 		$this->actions[$actionName] = $params;
-		return true;
+		return $this;
 	}
 
 	/**
@@ -227,126 +158,6 @@ class ReforumSDK
 		}
 
 		return $this->data = $this->_execRequest($url, self::$requestTypePost, $data);
-	}
-
-	/**
-	 * геокодирование
-	 * @param $params
-	 * @return array
-	 */
-	public function getEncodeGeo($params)
-	{
-		return $this->_requestList(self::ACT_GEOCODER, self::$requestTypeGet, $params);
-	}
-
-	/**
-	 * контекстный ТГБ
-	 * @param $params
-	 * @return array
-	 */
-	public function getContextTgb($params)
-	{
-		$url = $this->apiDomain . '/api/advertising/contextTgb/' . $this->_getUrlParams(array('lead' => $params));
-		$resp = $this->_execRequest($url, self::$requestTypePost);
-		return isset($resp['lead']) ? $resp['lead'] : null;
-	}
-
-	/**
-	 * похожие объявления
-	 * @param $params
-	 * @return array
-	 */
-	public function getSimilarAdverts($params)
-	{
-		return $this->_requestList(self::ACT_SIMILAR, self::$requestTypeGet, $params);
-	}
-
-	/**
-	 * получить список объявлений
-	 * @param $params
-	 * @return array
-	 */
-	public function getAdverts($params)
-	{
-		return $this->_requestList(self::ACT_ADVERT, self::$requestTypeGet, $params);
-	}
-
-	/**
-	 * Данные формы добавления объявления
-	 *
-	 * @param $realtyType
-	 * @param int $advertId
-	 * @return array
-	 */
-	public function getAdvertForm($realtyType, $advertId = 0)
-	{
-		$params = array(
-			'realty_type' => $realtyType,
-			'advert_id' => $advertId,
-		);
-		return $this->_requestList(self::ACT_ADVERT_FORM, self::$requestTypeGet, $params);
-	}
-
-	/**
-	 * получить список объявлений
-	 * @param $params
-	 * @return array
-	 */
-	public function getAdvert($params)
-	{
-		return $this->_requestView(self::ACT_ADVERT, self::$requestTypeGet, $params);
-	}
-
-	/**
-	 * получить список объявлений
-	 * @param $params
-	 * @return array
-	 */
-	public function getAdvertProps($params)
-	{
-		$params = array(self::ACT_ADVERT => $params);
-		$url = $this->apiDomain . '/' . self::ACT_ADVERT . '/' . self::ACT_ADVERT_PROPS . '/' . $this->_getUrlParams($params);
-		return $this->_execRequest($url, self::$requestTypeGet);
-	}
-
-	/**
-	 * @param bool $remember запомнить
-	 */
-	public function login($username, $password, $rememberMe=false)
-	{
-		$params = array('username' => $username, 'password' => $password, 'rememberMe' => $rememberMe);
-		$url = $this->apiDomain . '/login/' . $this->_getUrlParams(array('login' => $params));
-		$resp = $this->_execRequest($url, self::$requestTypeGet);
-		return isset($resp['userAccess']) ? $resp['userAccess'] : null;
-	}
-
-	public function leadSendMortgage($params)
-	{
-		$url = $this->apiDomain . '/api/lead/saveMortgage/' . $this->_getUrlParams(array('lead' => $params));
-		$resp = $this->_execRequest($url, self::$requestTypePost);
-		return isset($resp['lead']) ? $resp['lead'] : null;
-	}
-
-	public function leadSendQuery($params)
-	{
-		$url = $this->apiDomain . '/api/lead/saveQuery/' . $this->_getUrlParams(array('lead' => $params));
-		$resp = $this->_execRequest($url, self::$requestTypePost);
-		return isset($resp['lead']) ? $resp['lead'] : null;
-	}
-
-	public function getData($action = '')
-	{
-		if ($action && isset($this->data[ $action ])) {
-			return $this->data[ $action ];
-		}
-		return $this->data;
-	}
-
-	public function getContentItem($type, $id)
-	{
-		$url = $this->apiDomain . '/' . $type . '/' . $id .'/' . $this->_getUrlParams(array('id' => $id));
-		$resp = $this->_execRequest($url, self::$requestTypeGet);
-		return $resp;
 	}
 
 	protected function _requestView($act, $requestType, $params)
@@ -409,7 +220,6 @@ class ReforumSDK
 	{
 		$params['partnerId'] = $this->partnerId;
 		$params['actions'] = $this->getActions();
-		$params['regionId'] = $this->regionId;
 		$params['geoId'] = $this->geoId;
 		$params['sig'] = $this->getSignature($params);
 		if ($this->dbg) {
@@ -417,30 +227,6 @@ class ReforumSDK
 			$params['debug'] = 1;
 		}
 		return '?' . http_build_query($params, null, '&');
-	}
-
-	/**
-	 * Печатает вызов определённого метода
-	 *
-	 * @param string $action имя метода, по умолчанию выводит все
-	 * @return void
-	 */
-	public function printDataDebug($action = null)
-	{
-		echo '<br><pre>';
-		if($action) {
-			if (!is_array($action)) {
-				$action = array($action);
-			}
-			foreach ($action as $id) {
-				if(isset($this->data[$id])) {
-					var_dump($this->data[$id]);
-				}
-			}
-		} else {
-			var_dump($this->data);
-		}
-		echo '</pre>';
 	}
 
 	/**
@@ -487,7 +273,7 @@ class ReforumSDK
 
 		$str = '';
 		foreach ($params as $key => $value) {
-			$str .= sprintf('%s=%s', $key, $value);
+			$str .= $key . '=' . $value;
 		}
 		$str .= $this->secretKey;
 
