@@ -35,6 +35,9 @@ class ReforumSDK
 	const ACT_NEWS = 'news';
 	const ACT_ARTICLES = 'article';
 	const ACT_FAQ = 'faq';
+	const ACT_MORTGAGE            = 'mortgage';
+	const ACT_ANALYTICS           = 'analytics';
+	const ACT_REPAIR              = 'repair';
 	const ACT_INFOGRAPHIC = 'infographic';
 	const ACT_ADVERT_OF_DAY = 'advert_of_day';
 	const ACT_COMPANY_LEADERS = 'company_leaders';
